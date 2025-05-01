@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "186882239254",
+    "project_id": "tappy-ef726",
+    "storage_bucket": "tappy-ef726.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:186882239254:android:93fc0f98ed6223bc7cbe37",
+        "android_client_info": {
+          "package_name": "com.example.tappy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDWw22P21VbttiB26g0_ouLmwyYj-0qgsU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:186882239254:android:8e27a2919acd3c2c7cbe37",
+        "android_client_info": {
+          "package_name": "com.tappy.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDWw22P21VbttiB26g0_ouLmwyYj-0qgsU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
