@@ -1,15 +1,32 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+# Gradle
+.gradle/
+build/
+*/build/
+
+# Local configuration
 local.properties
+*.iml
+
+# IDE
+.idea/
+.DS_Store
+
+# Logs
+*.log
+
+# Git
+*.zip
+*.jar
+*.keystore
+*.apk
+
+# Kotlin
+*.class
+*.kts~
+
+# Node / NPM (если используешь Firebase functions)
+node_modules/
+
+# Misc
+.env
+gradle.properties
