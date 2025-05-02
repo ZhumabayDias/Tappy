@@ -7,7 +7,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -17,6 +16,7 @@ fun ResultScreen(score: Int, navController: NavController? = null) {
     val user = FirebaseAuth.getInstance().currentUser
     val db = FirebaseFirestore.getInstance()
 
+    // 🔄 Сохраняем результат в Firebase
     LaunchedEffect(score) {
         user?.let {
             val result = hashMapOf(
@@ -25,25 +25,44 @@ fun ResultScreen(score: Int, navController: NavController? = null) {
                 "score" to score,
                 "timestamp" to System.currentTimeMillis()
             )
-
-            db.collection("quiz_results")
-                .add(result)
+            db.collection("quiz_results").add(result)
         }
     }
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
-        Text("Quiz Completed!", fontSize = 28.sp)
-        Spacer(modifier = Modifier.height(16.dp))
-        Text("Your Score: $score", fontSize = 20.sp)
-        Spacer(modifier = Modifier.height(24.dp))
-        navController?.let {
-            Button(onClick = { it.navigate("welcome") }) {
-                Text("Play Again")
+        Column(
+            modifier = Modifier
+                .padding(32.dp)
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "🎉 Quiz Completed!",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "Your Score: $score",
+                style = MaterialTheme.typography.displaySmall,
+                color = MaterialTheme.colorScheme.secondary
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            navController?.let {
+                Button(
+                    onClick = { it.navigate("welcome") },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Play Again")
+                }
             }
         }
     }

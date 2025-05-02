@@ -5,24 +5,15 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
-import com.tappy.app.LoginScreen
-import com.tappy.app.ResultScreen
-import com.tappy.app.WelcomeScreen
-import com.tappy.app.QuizScreen
-
+import com.tappy.app.*
+import com.tappy.app.CategorySelectionScreen
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
     NavHost(navController, startDestination = "login") {
+
         composable("login") {
             LoginScreen(navController)
-        }
-
-        composable(
-            route = "quiz",
-            deepLinks = listOf(navDeepLink { uriPattern = "tappy://quiz" })
-        ) {
-            QuizScreen(navController)
         }
 
         composable(
@@ -30,6 +21,26 @@ fun AppNavGraph(navController: NavHostController) {
             deepLinks = listOf(navDeepLink { uriPattern = "tappy://welcome" })
         ) {
             WelcomeScreen(navController)
+        }
+
+        composable(
+            route = "quiz", // из интернета
+            deepLinks = listOf(navDeepLink { uriPattern = "tappy://quiz" })
+        ) {
+            QuizScreen(navController)
+        }
+
+        composable(
+            route = "categories"
+        ) {
+            CategorySelectionScreen(navController)
+        }
+
+        composable(
+            route = "quiz/{category}"
+        ) { backStackEntry ->
+            val category = backStackEntry.arguments?.getString("category")
+            QuizScreen(navController, category = category)
         }
 
         composable(

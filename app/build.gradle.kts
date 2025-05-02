@@ -42,6 +42,26 @@ android {
 }
 
 dependencies {
+    implementation("com.github.ZhumabayDias:logger:1.0.0")
+
+    implementation(libs.play.services.basement)
+
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.mockito:mockito-core:5.3.1")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:5.0.0-alpha.11")
+    // Koin Core
+    implementation("io.insert-koin:koin-core:3.5.3")
+
+// Koin for Android
+    implementation("io.insert-koin:koin-android:3.5.3")
+
+// Optional: for Jetpack Compose (if injecting Composables)
+    implementation("io.insert-koin:koin-androidx-compose:3.5.3")
     implementation("androidx.work:work-runtime-ktx:2.9.0")
     implementation("androidx.room:room-runtime:2.6.1")
     implementation(libs.material)

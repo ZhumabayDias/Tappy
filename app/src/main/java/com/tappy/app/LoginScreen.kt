@@ -5,6 +5,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
@@ -17,16 +18,21 @@ fun LoginScreen(navController: NavController) {
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
 
-    // Auto-login if already signed in
+    // Состояния ввода и ошибки
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // Если уже авторизован — перейти на welcome и запустить WorkManager
     val user = auth.currentUser
-    if (user != null) {
-        LaunchedEffect(Unit) {
+    LaunchedEffect(user) {
+        if (user != null) {
             navController.navigate("welcome") {
                 popUpTo("login") { inclusive = true }
             }
 
             val workRequest = PeriodicWorkRequestBuilder<NotificationWorker>(
-                15, TimeUnit.SECONDS
+                15, TimeUnit.MINUTES
             ).build()
 
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(
@@ -37,56 +43,83 @@ fun LoginScreen(navController: NavController) {
         }
     }
 
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        verticalArrangement = Arrangement.Center
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
-        Text("Login to Tappy", style = MaterialTheme.typography.headlineMedium)
-        Spacer(modifier = Modifier.height(24.dp))
-        OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") })
-        Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Password") })
-        Spacer(modifier = Modifier.height(16.dp))
+        Column(
+            modifier = Modifier
+                .padding(32.dp)
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "Login to Tappy",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
 
-        Button(onClick = {
-            auth.signInWithEmailAndPassword(email, password)
-                .addOnSuccessListener {
-                    navController.navigate("welcome") {
-                        popUpTo("login") { inclusive = true }
-                    }
-                }
-                .addOnFailureListener {
-                    errorMessage = it.localizedMessage
-                }
-        }) {
-            Text("Login")
-        }
+            Spacer(modifier = Modifier.height(24.dp))
 
-        Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("Email") },
+                modifier = Modifier.fillMaxWidth()
+            )
 
-        Button(onClick = {
-            auth.createUserWithEmailAndPassword(email, password)
-                .addOnSuccessListener {
-                    navController.navigate("welcome") {
-                        popUpTo("login") { inclusive = true }
-                    }
-                }
-                .addOnFailureListener {
-                    errorMessage = it.localizedMessage
-                }
-        }) {
-            Text("Sign Up")
-        }
-
-        errorMessage?.let {
             Spacer(modifier = Modifier.height(16.dp))
-            Text(it, color = MaterialTheme.colorScheme.error)
+
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password") },
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = {
+                    auth.signInWithEmailAndPassword(email, password)
+                        .addOnSuccessListener {
+                            navController.navigate("welcome") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        }
+                        .addOnFailureListener {
+                            errorMessage = it.localizedMessage
+                        }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Login")
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedButton(
+                onClick = {
+                    auth.createUserWithEmailAndPassword(email, password)
+                        .addOnSuccessListener {
+                            navController.navigate("welcome") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        }
+                        .addOnFailureListener {
+                            errorMessage = it.localizedMessage
+                        }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Sign Up")
+            }
+
+            errorMessage?.let {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(text = it, color = MaterialTheme.colorScheme.error)
+            }
         }
     }
 }

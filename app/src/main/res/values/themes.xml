@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
-    <style name="Theme.Tappy" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.Tappy" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/purple_40</item>
+        <item name="colorSecondary">@color/purple_80</item>
+        <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimary</item>
+    </style>
+
 </resources>

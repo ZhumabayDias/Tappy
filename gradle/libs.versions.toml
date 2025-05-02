@@ -16,6 +16,8 @@ roomRuntimeAndroid = "2.7.1"
 firebaseCrashlyticsBuildtools = "3.0.3"
 adapters = "3.2.0-alpha11"
 playServicesBase = "18.0.1"
+firebaseFirestore = "25.1.4"
+playServicesBasement = "18.3.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -40,6 +42,8 @@ androidx-room-runtime-android = { group = "androidx.room", name = "room-runtime-
 firebase-crashlytics-buildtools = { group = "com.google.firebase", name = "firebase-crashlytics-buildtools", version.ref = "firebaseCrashlyticsBuildtools" }
 androidx-adapters = { group = "androidx.databinding", name = "adapters", version.ref = "adapters" }
 play-services-base = { group = "com.google.android.gms", name = "play-services-base", version.ref = "playServicesBase" }
+firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore", version.ref = "firebaseFirestore" }
+play-services-basement = { group = "com.google.android.gms", name = "play-services-basement", version.ref = "playServicesBasement" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

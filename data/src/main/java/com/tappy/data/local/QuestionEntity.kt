@@ -8,5 +8,6 @@ data class QuestionEntity(
     @PrimaryKey val id: String,
     val questionText: String,
     val options: List<String>,
-    val correctAnswerIndex: Int
+    val correctAnswerIndex: Int,
+    val category: String
 )

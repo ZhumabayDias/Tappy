@@ -1,12 +1,14 @@
 package com.tappy.app
 
-
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,9 +18,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import androidx.room.Room
 import com.tappy.app.navigation.AppNavGraph
-import com.tappy.data.local.AppDatabase
 import com.tappy.data.local.QuestionEntity
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
@@ -26,6 +26,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import androidx.compose.runtime.Composable
 import androidx.work.Configuration
+import org.koin.core.context.startKoin
+import org.koin.android.ext.koin.androidContext
+import com.tappy.app.di.appModule
+import org.koin.androidx.compose.get
+import org.koin.android.ext.android.inject
+import com.tappy.data.local.QuestionDao
+import com.tappy.data.repository.QuizRepository
+import kotlinx.coroutines.CoroutineScope
 
 
 class MainActivity : ComponentActivity(), Configuration.Provider {
@@ -38,22 +46,6 @@ class MainActivity : ComponentActivity(), Configuration.Provider {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val db = Room.databaseBuilder(
-            applicationContext,
-            AppDatabase::class.java,
-            "quiz.db"
-        ).build()
-
-        val dao = db.questionDao()
-        val prefilled = listOf(
-            QuestionEntity("q1", "What is Android written in?", listOf("Java", "Kotlin", "Swift", "Dart"), 1),
-            QuestionEntity("q2", "What is Jetpack Compose used for?", listOf("UI", "Networking", "Databases", "Backend"), 0)
-        )
-
-        lifecycleScope.launch {
-            dao.insertAll(prefilled)
-        }
-
         setContent {
             val navController = rememberNavController()
             AppNavGraph(navController = navController)
@@ -61,91 +53,126 @@ class MainActivity : ComponentActivity(), Configuration.Provider {
     }
 }
 
+
 @Composable
 fun MainApp() {
     val navController = rememberNavController()
     AppNavGraph(navController = navController)
 }
-
 @Composable
-fun QuizScreen(navController: NavController) {
+fun QuizScreen(navController: NavController, category: String? = null) {
     val context = LocalContext.current
+    val dao: QuestionDao = get()
+    val quizRepo: QuizRepository = get()
 
-    // Load Room database
-    val db = remember {
-        Room.databaseBuilder(
-            context,
-            AppDatabase::class.java,
-            "quiz.db"
-        ).build()
-    }
-
-    // Load questions from Room
     var questions by remember { mutableStateOf<List<QuestionEntity>>(emptyList()) }
+    val scrollState = rememberScrollState()
 
-    LaunchedEffect(true) {
-        withContext(Dispatchers.IO) {
-            questions = db.questionDao().getAll()
-        }
-    }
-
-    // ✅ Wait until questions are loaded
-    if (questions.isEmpty()) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
-        }
-        return
-    }
-
-    // Track selected answers
-    val selectedAnswers = remember {
-        mutableStateListOf<Int?>().apply {
-            repeat(questions.size) { add(null) }
-        }
-    }
-
-    // ✅ Quiz UI
-    Column(modifier = Modifier.padding(16.dp)) {
-        questions.forEachIndexed { qIndex, question ->
-            Text("${qIndex + 1}. ${question.questionText}", fontSize = 18.sp)
-            Spacer(modifier = Modifier.height(4.dp))
-
-            question.options.forEachIndexed { oIndex, option ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 2.dp)
-                        .clickable { selectedAnswers[qIndex] = oIndex }
-                ) {
-                    RadioButton(
-                        selected = selectedAnswers[qIndex] == oIndex,
-                        onClick = { selectedAnswers[qIndex] = oIndex }
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(option)
+    // Категория: грузим из локального, иначе с API
+    LaunchedEffect(category) {
+        if (category != null) {
+            withContext(Dispatchers.IO) {
+                questions = dao.getByCategory(category)
+            }
+        } else {
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val apiQuestions = quizRepo.getQuestions()
+                    val entities = apiQuestions.map {
+                        QuestionEntity(
+                            id = it.id,
+                            questionText = it.questionText,
+                            options = it.options,
+                            correctAnswerIndex = it.correctAnswerIndex,
+                            category = "API"
+                        )
+                    }
+                    dao.deleteAll()
+                    dao.insertAll(entities)
+                    withContext(Dispatchers.Main) {
+                        questions = entities
+                        Toast.makeText(context, "Loaded ${entities.size} questions", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    Log.e("API", "Error loading questions", e)
                 }
             }
-            Spacer(modifier = Modifier.height(12.dp))
         }
+    }
 
-        Button(
-            onClick = {
-                val correctCount = selectedAnswers.withIndex().count {
-                    val correctIndex = questions[it.index].correctAnswerIndex
-                    it.value == correctIndex
+    val selectedAnswers = remember(questions) {
+        mutableStateListOf<Int?>().apply { repeat(questions.size) { add(null) } }
+    }
+
+    Surface(modifier = Modifier.fillMaxSize()) {
+        if (questions.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .verticalScroll(scrollState)
+                    .padding(16.dp)
+            ) {
+                Text(
+                    text = "Quiz - ${category ?: "Random"}",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                questions.forEachIndexed { qIndex, question ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                "${qIndex + 1}. ${question.questionText}",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            question.options.forEachIndexed { oIndex, option ->
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { selectedAnswers[qIndex] = oIndex }
+                                        .padding(vertical = 4.dp)
+                                ) {
+                                    RadioButton(
+                                        selected = selectedAnswers[qIndex] == oIndex,
+                                        onClick = { selectedAnswers[qIndex] = oIndex }
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(option)
+                                }
+                            }
+                        }
+                    }
                 }
-                navController.navigate("result/$correctCount")
-            },
-            enabled = selectedAnswers.size == questions.size && selectedAnswers.all { it != null },
-            modifier = Modifier.align(Alignment.End).padding(top = 16.dp)
-        ) {
-            Text("Submit")
+
+                Button(
+                    onClick = {
+                        val correctCount = selectedAnswers.withIndex().count {
+                            it.value == questions[it.index].correctAnswerIndex
+                        }
+                        navController.navigate("result/$correctCount")
+                    },
+                    enabled = selectedAnswers.all { it != null },
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                ) {
+                    Text("Submit")
+                }
+            }
         }
     }
 }
